@@ -499,7 +499,7 @@ input { font-family: inherit; }
   padding: 14px 14px max(env(safe-area-inset-bottom), 16px);
   border-top: var(--border-dim);
 }
-.import-btn {
+.import-btn, .sidebar-vocab-btn {
   width: 100%; padding: 14px;
   background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
   border: 1px solid rgba(255,255,255,0.3);
@@ -510,7 +510,12 @@ input { font-family: inherit; }
   box-shadow: 0 4px 16px rgba(91,140,255,0.35), inset 0 1px 0 rgba(255,255,255,0.3);
   transition: all 0.2s var(--ease-spring);
 }
-.import-btn:active {
+.sidebar-vocab-btn {
+  margin-bottom: 8px;
+  background: rgba(255,255,255,0.08);
+  box-shadow: none;
+}
+.import-btn:active, .sidebar-vocab-btn:active {
   transform: scale(0.97);
   box-shadow: 0 2px 8px rgba(91,140,255,0.3);
 }
@@ -672,7 +677,7 @@ input { font-family: inherit; }
   background: var(--tint-medium);
 }
 .vocab-toolbar {
-  display: flex; gap: 8px; margin-bottom: 12px;
+  display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;
 }
 .seg-btn {
   padding: 8px 12px;
@@ -682,6 +687,7 @@ input { font-family: inherit; }
   color: var(--text-secondary);
   font-size: 12px;
   font-weight: 700;
+  min-height: 34px;
 }
 .seg-btn.active {
   color: #fff;
@@ -738,6 +744,9 @@ input { font-family: inherit; }
   margin-top: 7px;
   font-size: 13.5px;
   line-height: 1.55;
+}
+.vocab-translation.pending {
+  color: var(--warning);
 }
 .vocab-example {
   margin-top: 8px;
@@ -852,6 +861,7 @@ input { font-family: inherit; }
     </div>
     <div class="sidebar-list" id="sidebarList"></div>
     <div class="import-area">
+      <button class="sidebar-vocab-btn" id="sidebarVocabBtn">単語帳を開く</button>
       <button class="import-btn" id="importBtn">+ 新しくインポート</button>
       <div class="import-hint">音声 (OGG / MP3 / M4A) と文字起こし (txt)</div>
     </div>
@@ -927,6 +937,7 @@ input { font-family: inherit; }
       </div>
       <div class="vocab-toolbar">
         <button class="seg-btn" id="vocabFilterBtn">学習済みを隠す</button>
+        <button class="seg-btn" id="translatePendingVocabBtn">未翻訳を翻訳</button>
       </div>
       <div class="vocab-list" id="vocabList"></div>
     </div>
@@ -1466,15 +1477,19 @@ async function requestTranslation(payload) {
   if (apiKey) {
     return requestOpenAITranslation(payload);
   }
-  const canUseLocalServer = ['localhost', '127.0.0.1', '::1'].includes(location.hostname);
-  if (location.protocol === 'file:' || !canUseLocalServer) {
-    throw new Error('AI設定でOpenAI APIキーを保存してください');
+  if (location.protocol === 'file:') {
+    throw new Error('AI設定でAPIキーを保存するか、PCのサーバーから開いてください');
   }
-  const res = await fetch('/api/translate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
+  let res;
+  try {
+    res = await fetch('/api/translate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+  } catch {
+    throw new Error('翻訳サーバーに接続できません');
+  }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || 'AIサーバーに接続できません');
   return String(data.translation || '').trim();
@@ -1521,6 +1536,10 @@ function openAIInput(payload) {
     'Translate this English paragraph into Japanese.',
     payload.text
   ].join('\n\n');
+}
+
+function isMissingTranslation(item) {
+  return !String(item?.translation || '').trim();
 }
 
 async function requestOpenAITranslation(payload) {
@@ -1624,7 +1643,7 @@ function askAddWord(word, idx) {
     text: sentence,
     actions: [
       {
-        label: '翻訳して追加',
+        label: '単語帳に追加',
         primary: true,
         onClick: () => addWordToVocab(clean, idx, sentence)
       },
@@ -1639,34 +1658,36 @@ function askAddWord(word, idx) {
 async function addWordToVocab(word, idx, sentence) {
   closeChoice();
   const existing = vocab.find(item =>
-    item.word.toLowerCase() === word.toLowerCase() && item.materialId === currentId
+    item.word.toLowerCase() === word.toLowerCase()
   );
   if (existing) {
     showToast('すでに単語帳にあります');
     return;
   }
-  showToast('単語を翻訳中...');
+  let translation = '';
+  let translated = false;
+  showToast('単語を追加中...');
   try {
-    const translation = await requestTranslation({ kind: 'word', text: word, context: sentence });
-    const entry = {
-      id: 'v_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
-      word,
-      translation,
-      sentence,
-      materialId: currentId,
-      materialTitle: currentMaterial?.title || '',
-      paragraphIdx: idx,
-      learned: false,
-      createdAt: Date.now()
-    };
-    await dbPutVocab(entry);
-    vocab.unshift(entry);
-    renderVocabList();
-    showToast('単語帳に追加しました');
+    translation = await requestTranslation({ kind: 'word', text: word, context: sentence });
+    translated = Boolean(translation);
   } catch (e) {
     console.error(e);
-    showToast(e.message || '単語の追加に失敗しました');
   }
+  const entry = {
+    id: 'v_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+    word,
+    translation,
+    sentence,
+    materialId: currentId,
+    materialTitle: currentMaterial?.title || '',
+    paragraphIdx: idx,
+    learned: false,
+    createdAt: Date.now()
+  };
+  await dbPutVocab(entry);
+  vocab.unshift(entry);
+  renderVocabList();
+  showToast(translated ? '単語帳に追加しました' : '未翻訳で追加しました');
 }
 
 async function loadVocabList() {
@@ -1680,6 +1701,10 @@ function renderVocabList() {
   if (!list) return;
   list.innerHTML = '';
   $('vocabFilterBtn').classList.toggle('active', hiddenLearnedVocab);
+  const pendingCount = vocab.filter(isMissingTranslation).length;
+  $('translatePendingVocabBtn').textContent = pendingCount ? `未翻訳を翻訳 (${pendingCount})` : '未翻訳なし';
+  $('translatePendingVocabBtn').disabled = pendingCount === 0;
+  $('translatePendingVocabBtn').classList.toggle('active', pendingCount > 0);
   const items = hiddenLearnedVocab ? vocab.filter(item => !item.learned) : vocab;
   if (items.length === 0) {
     list.innerHTML = '<div class="vocab-empty">まだ単語がありません<br>段落を長押しして選択し、単語をタップすると追加できます</div>';
@@ -1722,8 +1747,8 @@ function renderVocabList() {
     top.append(word, actions);
 
     const translation = document.createElement('div');
-    translation.className = 'vocab-translation';
-    translation.textContent = item.translation;
+    translation.className = 'vocab-translation' + (isMissingTranslation(item) ? ' pending' : '');
+    translation.textContent = isMissingTranslation(item) ? '未翻訳' : item.translation;
 
     const example = document.createElement('div');
     example.className = 'vocab-example';
@@ -1732,6 +1757,49 @@ function renderVocabList() {
     row.append(top, translation, example);
     list.appendChild(row);
   });
+}
+
+function openVocabModal() {
+  renderVocabList();
+  $('vocabModal').classList.add('open');
+}
+
+async function translatePendingVocab() {
+  const pending = vocab.filter(isMissingTranslation);
+  if (pending.length === 0) {
+    showToast('未翻訳の単語はありません');
+    return;
+  }
+
+  $('translatePendingVocabBtn').disabled = true;
+  let translated = 0;
+  let failed = 0;
+
+  for (let i = 0; i < pending.length; i++) {
+    const item = pending[i];
+    showToast(`未翻訳を翻訳中 ${i + 1}/${pending.length}`);
+    try {
+      const result = await requestTranslation({
+        kind: 'word',
+        text: item.word,
+        context: item.sentence || ''
+      });
+      if (result) {
+        item.translation = result;
+        item.translatedAt = Date.now();
+        await dbPutVocab(item);
+        translated++;
+      } else {
+        failed++;
+      }
+    } catch (e) {
+      console.error(e);
+      failed++;
+    }
+  }
+
+  renderVocabList();
+  showToast(failed ? `${translated}件翻訳、${failed}件失敗` : `${translated}件を翻訳しました`);
 }
 
 function toggleDone(idx) {
@@ -1915,8 +1983,11 @@ $('filterDoneBtn').onclick = () => {
   showToast(hiddenDone ? '学習済みを隠します' : '学習済みも表示します');
 };
 $('vocabBtn').onclick = () => {
-  renderVocabList();
-  $('vocabModal').classList.add('open');
+  openVocabModal();
+};
+$('sidebarVocabBtn').onclick = () => {
+  closeSidebar();
+  openVocabModal();
 };
 $('vocabClose').onclick = () => $('vocabModal').classList.remove('open');
 $('vocabModal').onclick = (e) => { if (e.target === $('vocabModal')) $('vocabModal').classList.remove('open'); };
@@ -1925,6 +1996,7 @@ $('vocabFilterBtn').onclick = () => {
   localStorage.setItem('shadowingHiddenLearnedVocab', hiddenLearnedVocab ? '1' : '0');
   renderVocabList();
 };
+$('translatePendingVocabBtn').onclick = translatePendingVocab;
 updateFilterDoneButton();
 
 let toastTimer = null;
