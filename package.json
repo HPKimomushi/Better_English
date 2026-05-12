@@ -1,6 +1,9 @@
 {
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "codex:app-server": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/start-codex-app-server.ps1",
+    "codex:app-server:lan": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/start-codex-app-server.ps1 -Lan",
+    "codex:app-server:protocol": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/generate-codex-app-server-protocol.ps1"
   },
   "dependencies": {}
 }
