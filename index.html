@@ -117,6 +117,7 @@ input { font-family: inherit; }
 /* ===== Header ===== */
 .header {
   display: flex; align-items: center; justify-content: space-between;
+  gap: 8px;
   padding: max(env(safe-area-inset-top), 12px) 14px 12px;
   border-radius: 0;
   border-left: none; border-right: none; border-top: none;
@@ -132,6 +133,9 @@ input { font-family: inherit; }
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 8px;
   letter-spacing: -0.01em;
 }
+.header-actions {
+  display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+}
 .icon-btn {
   width: 38px; height: 38px; border-radius: var(--radius-sm);
   display: flex; align-items: center; justify-content: center;
@@ -141,6 +145,12 @@ input { font-family: inherit; }
   transition: all 0.2s var(--ease-smooth);
 }
 .icon-btn:active { transform: scale(0.94); background: var(--tint-medium); }
+.icon-btn.active {
+  background: rgba(91,140,255,0.24);
+  border-color: rgba(91,140,255,0.55);
+  color: #fff;
+  box-shadow: 0 2px 12px rgba(91,140,255,0.28);
+}
 
 /* ===== Main ===== */
 .main {
@@ -172,6 +182,8 @@ input { font-family: inherit; }
   -webkit-backdrop-filter: blur(14px) saturate(180%);
   transition: all 0.25s var(--ease-smooth);
   animation: fadeUp 0.4s var(--ease-smooth) backwards;
+  user-select: none;
+  -webkit-user-select: none;
 }
 .paragraph::before {
   content: ''; position: absolute; inset: 0; z-index: -1;
@@ -186,6 +198,10 @@ input { font-family: inherit; }
   transform: translateY(-1px);
 }
 .paragraph.done { opacity: 0.45; }
+.paragraph.selected {
+  border-color: rgba(192,132,252,0.65);
+  box-shadow: 0 5px 26px rgba(192,132,252,0.24);
+}
 .paragraph.ab-marked {
   border-color: rgba(255,179,64,0.55);
   box-shadow: 0 4px 20px rgba(255,179,64,0.2);
@@ -239,10 +255,58 @@ input { font-family: inherit; }
   box-shadow: 0 2px 12px rgba(255,179,64,0.4);
 }
 .ab-btn:active { transform: scale(0.9); }
+.translate-toggle-btn {
+  min-width: 34px; height: 30px; border-radius: 9px;
+  padding: 0 9px;
+  font-size: 11px; font-weight: 700;
+  background: rgba(48,209,88,0.12);
+  border: 1px solid rgba(48,209,88,0.35);
+  color: rgba(217,255,225,0.95);
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s var(--ease-spring);
+}
+.translate-toggle-btn:active { transform: scale(0.92); }
 .paragraph-text {
   font-size: 14.5px; line-height: 1.75; color: var(--text-primary);
   margin: 0; word-wrap: break-word; font-weight: 400;
   letter-spacing: -0.005em;
+}
+.paragraph-body {
+  overflow: hidden;
+  border-radius: 12px;
+}
+.paragraph-track {
+  display: flex;
+  width: 100%;
+  transition: transform 0.28s var(--ease-smooth);
+  will-change: transform;
+}
+.paragraph.show-translation .paragraph-track { transform: translateX(-100%); }
+.paragraph-panel {
+  min-width: 100%;
+  padding-right: 1px;
+}
+.translation-text {
+  color: rgba(232,240,255,0.95);
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+}
+.translation-empty {
+  color: var(--text-tertiary);
+  font-size: 13px;
+}
+.word-token {
+  display: inline-block;
+  padding: 0 2px;
+  margin: 0 -1px;
+  border-radius: 6px;
+  transition: background 0.15s var(--ease-smooth), color 0.15s var(--ease-smooth);
+}
+.paragraph.selected .word-token {
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+}
+.paragraph.selected .word-token:active {
+  background: rgba(91,140,255,0.35);
 }
 
 /* ===== Player ===== */
@@ -496,7 +560,7 @@ input { font-family: inherit; }
   margin-bottom: 6px; font-weight: 500;
   text-transform: uppercase; letter-spacing: 0.05em;
 }
-.modal-box input[type="text"], .modal-box input[type="file"] {
+.modal-box input[type="text"], .modal-box input[type="password"], .modal-box input[type="file"] {
   width: 100%; padding: 11px 12px;
   background: var(--tint-soft);
   border: var(--border-dim);
@@ -505,7 +569,7 @@ input { font-family: inherit; }
   margin-bottom: 14px;
   transition: all 0.2s var(--ease-smooth);
 }
-.modal-box input[type="text"]:focus {
+.modal-box input[type="text"]:focus, .modal-box input[type="password"]:focus {
   outline: none;
   border-color: rgba(91,140,255,0.5);
   background: var(--tint-medium);
@@ -550,6 +614,145 @@ input { font-family: inherit; }
 .info-text .info-section {
   margin-top: 14px; padding-top: 14px;
   border-top: var(--border-dim);
+}
+.settings-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.settings-row button {
+  flex: 1;
+}
+.settings-note {
+  color: var(--text-tertiary);
+  font-size: 11px;
+  line-height: 1.55;
+  margin-top: -6px;
+  margin-bottom: 10px;
+}
+.modal-box.wide {
+  max-width: 520px;
+}
+.modal-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  margin-bottom: 14px;
+}
+.modal-head h3 { margin: 0; }
+.choice-text {
+  margin: -4px 0 16px;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--text-secondary);
+}
+.action-list {
+  display: grid;
+  gap: 8px;
+}
+.action-row {
+  width: 100%;
+  padding: 13px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--tint-soft);
+  border: var(--border-dim);
+  text-align: left;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s var(--ease-smooth);
+}
+.action-row.primary {
+  background: rgba(91,140,255,0.24);
+  border-color: rgba(91,140,255,0.5);
+}
+.action-row.danger {
+  color: #ff8f8f;
+  border-color: rgba(255,107,107,0.25);
+}
+.action-row:active {
+  transform: scale(0.98);
+  background: var(--tint-medium);
+}
+.vocab-toolbar {
+  display: flex; gap: 8px; margin-bottom: 12px;
+}
+.seg-btn {
+  padding: 8px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--tint-soft);
+  border: var(--border-dim);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+}
+.seg-btn.active {
+  color: #fff;
+  background: rgba(91,140,255,0.24);
+  border-color: rgba(91,140,255,0.5);
+}
+.vocab-list {
+  display: grid;
+  gap: 9px;
+}
+.vocab-item {
+  padding: 13px;
+  border-radius: var(--radius-md);
+  background: var(--tint-soft);
+  border: var(--border-dim);
+}
+.vocab-item.learned {
+  opacity: 0.48;
+}
+.vocab-top {
+  display: flex; align-items: center; gap: 8px;
+}
+.vocab-word {
+  flex: 1;
+  min-width: 0;
+  font-size: 16px;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.vocab-actions {
+  display: flex; gap: 6px;
+}
+.mini-btn {
+  min-width: 32px; height: 30px;
+  border-radius: 9px;
+  padding: 0 9px;
+  background: var(--tint-soft);
+  border: var(--border-dim);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+}
+.mini-btn.active {
+  background: rgba(48,209,88,0.16);
+  border-color: rgba(48,209,88,0.42);
+  color: rgba(222,255,230,0.96);
+}
+.mini-btn.danger {
+  color: #ff8f8f;
+  border-color: rgba(255,107,107,0.22);
+}
+.vocab-translation {
+  margin-top: 7px;
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+.vocab-example {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: var(--border-dim);
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.55;
+}
+.vocab-empty {
+  padding: 34px 18px;
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  line-height: 1.7;
 }
 
 /* Toast */
@@ -597,7 +800,11 @@ input { font-family: inherit; }
   <div class="header">
     <button class="icon-btn" id="menuBtn" aria-label="Menu">☰</button>
     <h1 id="title">Shadowing</h1>
-    <button class="icon-btn" id="infoBtn" aria-label="Info">ⓘ</button>
+    <div class="header-actions">
+      <button class="icon-btn" id="filterDoneBtn" aria-label="学習済みを隠す">✓</button>
+      <button class="icon-btn" id="vocabBtn" aria-label="単語帳">単</button>
+      <button class="icon-btn" id="infoBtn" aria-label="Info">ⓘ</button>
+    </div>
   </div>
 
   <!-- Main -->
@@ -674,18 +881,54 @@ input { font-family: inherit; }
       <div class="info-text">
         ・タイムスタンプをタップで該当箇所へジャンプ<br>
         ・チェックボックスで進捗管理<br>
-        ・各段落の <strong>🔁</strong> でA-Bリピート設定<br>
-        　（2段落を選ぶと、その間をループ再生）<br>
-        ・速度を下げても音程は変わりません
+        ・段落を長押しで翻訳、選択中の単語タップで単語帳へ追加<br>
+        ・各段落の <strong>🔁</strong> でリピート設定<br>
+        　（選んだ段落を順番にループ再生）<br>
+        ・上のタイトル付近をタップで一番上へ戻ります
         <div class="info-section">
           <strong>ホーム画面に追加</strong><br>
           Safariの共有ボタン →「ホーム画面に追加」で<br>アプリのように使えます。<br>
           データはこの端末のブラウザ内に保存されます。
         </div>
+        <div class="info-section">
+          <strong>AI設定</strong><br>
+          <label style="margin-top:12px;">OpenAI API Key</label>
+          <input type="password" id="apiKeyInput" placeholder="sk-...">
+          <div class="settings-note">キーはこのブラウザ内にのみ保存されます。共有端末では保存しないでください。</div>
+          <label>Model</label>
+          <input type="text" id="apiModelInput" placeholder="gpt-5.4-nano">
+          <div class="settings-row">
+            <button class="btn-primary" id="apiSaveBtn">保存</button>
+            <button class="btn-cancel" id="apiClearBtn">削除</button>
+          </div>
+        </div>
       </div>
       <div class="modal-buttons" style="margin-top:18px;">
         <button class="btn-primary" id="infoClose">閉じる</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Choice Modal -->
+  <div class="modal" id="choiceModal">
+    <div class="modal-box">
+      <h3 id="choiceTitle"></h3>
+      <div class="choice-text" id="choiceText"></div>
+      <div class="action-list" id="choiceActions"></div>
+    </div>
+  </div>
+
+  <!-- Vocabulary Modal -->
+  <div class="modal" id="vocabModal">
+    <div class="modal-box wide">
+      <div class="modal-head">
+        <h3>単語帳</h3>
+        <button class="icon-btn" id="vocabClose" aria-label="閉じる">✕</button>
+      </div>
+      <div class="vocab-toolbar">
+        <button class="seg-btn" id="vocabFilterBtn">学習済みを隠す</button>
+      </div>
+      <div class="vocab-list" id="vocabList"></div>
     </div>
   </div>
 
@@ -699,7 +942,7 @@ input { font-family: inherit; }
 
 // ============ IndexedDB ============
 const DB_NAME = 'shadowingDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 let db = null;
 
 function openDB() {
@@ -709,6 +952,10 @@ function openDB() {
       const d = e.target.result;
       if (!d.objectStoreNames.contains('materials')) {
         d.createObjectStore('materials', { keyPath: 'id' });
+      }
+      if (!d.objectStoreNames.contains('vocab')) {
+        const vocabStore = d.createObjectStore('vocab', { keyPath: 'id' });
+        vocabStore.createIndex('materialId', 'materialId', { unique: false });
       }
     };
     req.onsuccess = (e) => { db = e.target.result; resolve(db); };
@@ -743,6 +990,30 @@ function dbDelete(id) {
   return new Promise((resolve, reject) => {
     const tx = db.transaction('materials', 'readwrite');
     tx.objectStore('materials').delete(id);
+    tx.oncomplete = () => resolve();
+    tx.onerror = (e) => reject(e.target.error);
+  });
+}
+function dbGetAllVocab() {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('vocab', 'readonly');
+    const req = tx.objectStore('vocab').getAll();
+    req.onsuccess = () => resolve(req.result || []);
+    req.onerror = (e) => reject(e.target.error);
+  });
+}
+function dbPutVocab(entry) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('vocab', 'readwrite');
+    tx.objectStore('vocab').put(entry);
+    tx.oncomplete = () => resolve();
+    tx.onerror = (e) => reject(e.target.error);
+  });
+}
+function dbDeleteVocab(id) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('vocab', 'readwrite');
+    tx.objectStore('vocab').delete(id);
     tx.oncomplete = () => resolve();
     tx.onerror = (e) => reject(e.target.error);
   });
@@ -806,6 +1077,17 @@ let currentAudioURL = null;
 let activeParaIdx = -1;
 let abMarks = [];
 let currentSpeed = 1;
+let vocab = [];
+let selectedParaIdx = -1;
+let hiddenDone = localStorage.getItem('shadowingHiddenDone') === '1';
+let hiddenLearnedVocab = localStorage.getItem('shadowingHiddenLearnedVocab') === '1';
+let shownTranslations = new Set();
+let longPressTimer = null;
+let suppressNextClick = false;
+const LONG_PRESS_MS = 560;
+const DEFAULT_OPENAI_MODEL = 'gpt-5.4-nano';
+let apiKey = localStorage.getItem('shadowingOpenAIKey') || '';
+let apiModel = localStorage.getItem('shadowingOpenAIModel') || DEFAULT_OPENAI_MODEL;
 
 const $ = id => document.getElementById(id);
 const audio = $('audio');
@@ -945,6 +1227,7 @@ $('impSave').onclick = async () => {
       audioFileName: audioFile.name,
       paragraphs,
       progress: {},
+      translations: {},
       createdAt: Date.now()
     };
     await dbPut(material);
@@ -972,8 +1255,12 @@ async function loadMaterial(id) {
   if (!m) return;
   currentId = id;
   currentMaterial = m;
+  currentMaterial.progress = currentMaterial.progress || {};
+  currentMaterial.translations = currentMaterial.translations || {};
   abMarks = [];
   activeParaIdx = -1;
+  selectedParaIdx = -1;
+  shownTranslations = new Set();
   if (currentAudioURL) URL.revokeObjectURL(currentAudioURL);
   currentAudioURL = URL.createObjectURL(m.audioBlob);
   audio.src = currentAudioURL;
@@ -988,6 +1275,36 @@ async function loadMaterial(id) {
 }
 
 // ============ Paragraph Rendering ============
+function updateFilterDoneButton() {
+  const btn = $('filterDoneBtn');
+  btn.classList.toggle('active', hiddenDone);
+  btn.title = hiddenDone ? '学習済みを表示する' : '学習済みを隠す';
+}
+
+function setParagraphSelected(idx) {
+  selectedParaIdx = selectedParaIdx === idx ? -1 : idx;
+  renderParagraphs();
+}
+
+function renderSelectableText(el, text, idx) {
+  const parts = text.split(/([A-Za-z][A-Za-z'’-]*)/g);
+  parts.forEach(part => {
+    if (/^[A-Za-z][A-Za-z'’-]*$/.test(part)) {
+      const span = document.createElement('span');
+      span.className = 'word-token';
+      span.textContent = part;
+      span.dataset.word = part;
+      span.onclick = (e) => {
+        e.stopPropagation();
+        if (selectedParaIdx === idx) askAddWord(part, idx);
+      };
+      el.appendChild(span);
+    } else {
+      el.appendChild(document.createTextNode(part));
+    }
+  });
+}
+
 function renderParagraphs() {
   const main = $('main');
   main.innerHTML = '';
@@ -995,13 +1312,16 @@ function renderParagraphs() {
     main.appendChild(emptyEl());
     return;
   }
+  currentMaterial.translations = currentMaterial.translations || {};
   currentMaterial.paragraphs.forEach((p, idx) => {
+    if (hiddenDone && currentMaterial.progress[idx]) return;
     const div = document.createElement('div');
-    div.className = 'paragraph';
+    div.className = 'paragraph' + (shownTranslations.has(idx) ? ' show-translation' : '');
     div.dataset.idx = idx;
     div.style.animationDelay = Math.min(idx * 0.03, 0.4) + 's';
     if (currentMaterial.progress[idx]) div.classList.add('done');
     if (abMarks.includes(idx)) div.classList.add('ab-marked');
+    if (selectedParaIdx === idx) div.classList.add('selected');
 
     const head = document.createElement('div');
     head.className = 'paragraph-head';
@@ -1025,15 +1345,392 @@ function renderParagraphs() {
     abBtn.innerHTML = '🔁';
     abBtn.onclick = (e) => { e.stopPropagation(); toggleAB(idx); };
 
-    head.append(cb, ts, sp, abBtn);
+    head.append(cb, ts, sp);
 
+    if (currentMaterial.translations[idx]) {
+      const trBtn = document.createElement('button');
+      trBtn.className = 'translate-toggle-btn';
+      trBtn.textContent = shownTranslations.has(idx) ? 'EN' : '訳';
+      trBtn.onclick = (e) => { e.stopPropagation(); toggleTranslationView(idx); };
+      head.appendChild(trBtn);
+    }
+    head.appendChild(abBtn);
+
+    const body = document.createElement('div');
+    body.className = 'paragraph-body';
+
+    const track = document.createElement('div');
+    track.className = 'paragraph-track';
+
+    const enPanel = document.createElement('div');
+    enPanel.className = 'paragraph-panel';
     const txt = document.createElement('p');
     txt.className = 'paragraph-text';
-    txt.textContent = p.text;
+    if (selectedParaIdx === idx) renderSelectableText(txt, p.text, idx);
+    else txt.textContent = p.text;
+    enPanel.appendChild(txt);
 
-    div.append(head, txt);
-    div.onclick = () => jumpTo(p.time);
+    const jaPanel = document.createElement('div');
+    jaPanel.className = 'paragraph-panel';
+    const ja = document.createElement('p');
+    ja.className = 'paragraph-text translation-text';
+    ja.textContent = currentMaterial.translations[idx] || '長押しで翻訳できます';
+    jaPanel.appendChild(ja);
+    track.append(enPanel, jaPanel);
+    body.appendChild(track);
+
+    div.append(head, body);
+    div.onpointerdown = (e) => startLongPress(e, idx);
+    div.onpointerup = clearLongPress;
+    div.onpointercancel = clearLongPress;
+    div.onpointerleave = clearLongPress;
+    div.onclick = (e) => {
+      if (suppressNextClick) {
+        suppressNextClick = false;
+        return;
+      }
+      if (e.target.closest('button') || e.target.classList.contains('word-token')) return;
+      jumpTo(p.time);
+    };
     main.appendChild(div);
+  });
+  updateFilterDoneButton();
+}
+
+function startLongPress(e, idx) {
+  if (e.target.closest('button') || e.target.classList.contains('word-token')) return;
+  clearLongPress();
+  longPressTimer = setTimeout(() => {
+    suppressNextClick = true;
+    selectedParaIdx = idx;
+    renderParagraphs();
+    askTranslateParagraph(idx);
+  }, LONG_PRESS_MS);
+}
+
+function clearLongPress() {
+  if (longPressTimer) clearTimeout(longPressTimer);
+  longPressTimer = null;
+}
+
+function toggleTranslationView(idx) {
+  if (shownTranslations.has(idx)) shownTranslations.delete(idx);
+  else shownTranslations.add(idx);
+  renderParagraphs();
+}
+
+function askTranslateParagraph(idx) {
+  if (!currentMaterial) return;
+  const already = currentMaterial.translations?.[idx];
+  openChoice({
+    title: already ? '表示を切り替えますか？' : 'この段落を翻訳しますか？',
+    text: currentMaterial.paragraphs[idx].text,
+    actions: [
+      {
+        label: already ? '日本語訳を表示' : '日本語に翻訳',
+        primary: true,
+        onClick: () => translateParagraph(idx)
+      },
+      {
+        label: '閉じる',
+        onClick: closeChoice
+      }
+    ]
+  });
+}
+
+async function translateParagraph(idx) {
+  closeChoice();
+  if (!currentMaterial) return;
+  currentMaterial.translations = currentMaterial.translations || {};
+  if (!currentMaterial.translations[idx]) {
+    showToast('翻訳中...');
+    try {
+      currentMaterial.translations[idx] = await requestTranslation({
+        kind: 'paragraph',
+        text: currentMaterial.paragraphs[idx].text
+      });
+      await dbPut(currentMaterial);
+    } catch (e) {
+      console.error(e);
+      showToast(e.message || '翻訳に失敗しました');
+      return;
+    }
+  }
+  shownTranslations.add(idx);
+  renderParagraphs();
+  showToast('翻訳を表示しました');
+}
+
+async function requestTranslation(payload) {
+  if (apiKey) {
+    return requestOpenAITranslation(payload);
+  }
+  const canUseLocalServer = ['localhost', '127.0.0.1', '::1'].includes(location.hostname);
+  if (location.protocol === 'file:' || !canUseLocalServer) {
+    throw new Error('AI設定でOpenAI APIキーを保存してください');
+  }
+  const res = await fetch('/api/translate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'AIサーバーに接続できません');
+  return String(data.translation || '').trim();
+}
+
+function translationSchema(kind) {
+  return {
+    type: 'object',
+    additionalProperties: false,
+    properties: {
+      kind: { type: 'string', enum: [kind] },
+      translation: { type: 'string' }
+    },
+    required: ['kind', 'translation']
+  };
+}
+
+function openAIInstructions(kind) {
+  if (kind === 'word') {
+    return [
+      'You translate English vocabulary for a Japanese English learner.',
+      'Return exactly one JSON object that matches the provided schema.',
+      'translation must be a short natural Japanese meaning.',
+      'Do not include markdown, ruby, explanations, examples, or extra keys.'
+    ].join(' ');
+  }
+  return [
+    'You translate English transcript paragraphs into natural Japanese for shadowing study.',
+    'Return exactly one JSON object that matches the provided schema.',
+    'translation must be natural Japanese, concise, and preserve the speaker nuance.',
+    'Do not include markdown, notes, alternatives, or extra keys.'
+  ].join(' ');
+}
+
+function openAIInput(payload) {
+  if (payload.kind === 'word') {
+    return [
+      `Word: ${payload.text}`,
+      `Example sentence: ${payload.context || ''}`,
+      'Translate the word in this example context.'
+    ].join('\n');
+  }
+  return [
+    'Translate this English paragraph into Japanese.',
+    payload.text
+  ].join('\n\n');
+}
+
+async function requestOpenAITranslation(payload) {
+  const kind = payload.kind === 'word' ? 'word' : 'paragraph';
+  const body = {
+    model: apiModel || DEFAULT_OPENAI_MODEL,
+    instructions: openAIInstructions(kind),
+    input: openAIInput({ ...payload, kind }),
+    reasoning: { effort: 'none' },
+    max_output_tokens: kind === 'word' ? 80 : 700,
+    text: {
+      format: {
+        type: 'json_schema',
+        name: `${kind}_translation`,
+        schema: translationSchema(kind),
+        strict: true
+      }
+    }
+  };
+
+  const res = await fetch('https://api.openai.com/v1/responses', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const msg = data.error?.message || `OpenAI API error: ${res.status}`;
+    throw new Error(msg);
+  }
+
+  const raw = extractOpenAIText(data);
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed.kind !== kind || typeof parsed.translation !== 'string') {
+      throw new Error('Unexpected translation format');
+    }
+    return parsed.translation.trim();
+  } catch (e) {
+    console.warn('Structured output parse failed', e, raw);
+    throw new Error('翻訳結果の形式が不正でした');
+  }
+}
+
+function extractOpenAIText(data) {
+  if (typeof data.output_text === 'string') return data.output_text.trim();
+  const parts = [];
+  for (const item of data.output || []) {
+    for (const content of item.content || []) {
+      if ((content.type === 'output_text' || content.type === 'text') && content.text) {
+        parts.push(content.text);
+      }
+    }
+  }
+  return parts.join('').trim();
+}
+
+function openChoice({ title, text, actions }) {
+  $('choiceTitle').textContent = title;
+  $('choiceText').textContent = text || '';
+  const box = $('choiceActions');
+  box.innerHTML = '';
+  actions.forEach(action => {
+    const btn = document.createElement('button');
+    btn.className = 'action-row' + (action.primary ? ' primary' : '') + (action.danger ? ' danger' : '');
+    btn.textContent = action.label;
+    btn.onclick = action.onClick;
+    box.appendChild(btn);
+  });
+  $('choiceModal').classList.add('open');
+}
+
+function closeChoice() {
+  $('choiceModal').classList.remove('open');
+}
+
+function normalizeWord(word) {
+  return String(word || '').replace(/^[^A-Za-z]+|[^A-Za-z]+$/g, '').toLowerCase();
+}
+
+function sentenceForWord(text, word) {
+  const normalized = normalizeWord(word);
+  const sentences = String(text || '').match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [text];
+  const hit = sentences.find(sentence => new RegExp(`\\b${escapeRegExp(normalized)}\\b`, 'i').test(sentence));
+  return (hit || sentences[0] || text || '').trim();
+}
+
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function askAddWord(word, idx) {
+  const clean = normalizeWord(word);
+  if (!clean) return;
+  const sentence = sentenceForWord(currentMaterial.paragraphs[idx].text, clean);
+  openChoice({
+    title: `「${clean}」を単語帳に追加しますか？`,
+    text: sentence,
+    actions: [
+      {
+        label: '翻訳して追加',
+        primary: true,
+        onClick: () => addWordToVocab(clean, idx, sentence)
+      },
+      {
+        label: '閉じる',
+        onClick: closeChoice
+      }
+    ]
+  });
+}
+
+async function addWordToVocab(word, idx, sentence) {
+  closeChoice();
+  const existing = vocab.find(item =>
+    item.word.toLowerCase() === word.toLowerCase() && item.materialId === currentId
+  );
+  if (existing) {
+    showToast('すでに単語帳にあります');
+    return;
+  }
+  showToast('単語を翻訳中...');
+  try {
+    const translation = await requestTranslation({ kind: 'word', text: word, context: sentence });
+    const entry = {
+      id: 'v_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+      word,
+      translation,
+      sentence,
+      materialId: currentId,
+      materialTitle: currentMaterial?.title || '',
+      paragraphIdx: idx,
+      learned: false,
+      createdAt: Date.now()
+    };
+    await dbPutVocab(entry);
+    vocab.unshift(entry);
+    renderVocabList();
+    showToast('単語帳に追加しました');
+  } catch (e) {
+    console.error(e);
+    showToast(e.message || '単語の追加に失敗しました');
+  }
+}
+
+async function loadVocabList() {
+  vocab = await dbGetAllVocab();
+  vocab.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  renderVocabList();
+}
+
+function renderVocabList() {
+  const list = $('vocabList');
+  if (!list) return;
+  list.innerHTML = '';
+  $('vocabFilterBtn').classList.toggle('active', hiddenLearnedVocab);
+  const items = hiddenLearnedVocab ? vocab.filter(item => !item.learned) : vocab;
+  if (items.length === 0) {
+    list.innerHTML = '<div class="vocab-empty">まだ単語がありません<br>段落を長押しして選択し、単語をタップすると追加できます</div>';
+    return;
+  }
+  items.forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'vocab-item' + (item.learned ? ' learned' : '');
+
+    const top = document.createElement('div');
+    top.className = 'vocab-top';
+
+    const word = document.createElement('div');
+    word.className = 'vocab-word';
+    word.textContent = item.word;
+
+    const actions = document.createElement('div');
+    actions.className = 'vocab-actions';
+
+    const learned = document.createElement('button');
+    learned.className = 'mini-btn' + (item.learned ? ' active' : '');
+    learned.textContent = '済';
+    learned.onclick = async () => {
+      item.learned = !item.learned;
+      await dbPutVocab(item);
+      renderVocabList();
+    };
+
+    const del = document.createElement('button');
+    del.className = 'mini-btn danger';
+    del.textContent = '削除';
+    del.onclick = async () => {
+      await dbDeleteVocab(item.id);
+      vocab = vocab.filter(v => v.id !== item.id);
+      renderVocabList();
+      showToast('削除しました');
+    };
+
+    actions.append(learned, del);
+    top.append(word, actions);
+
+    const translation = document.createElement('div');
+    translation.className = 'vocab-translation';
+    translation.textContent = item.translation;
+
+    const example = document.createElement('div');
+    example.className = 'vocab-example';
+    example.textContent = item.sentence || '';
+
+    row.append(top, translation, example);
+    list.appendChild(row);
   });
 }
 
@@ -1049,6 +1746,7 @@ function toggleDone(idx) {
   dbPut(currentMaterial);
   const sm = materials.find(m => m.id === currentId);
   if (sm) sm.progress = currentMaterial.progress;
+  if (hiddenDone) renderParagraphs();
 }
 
 function toggleAB(idx) {
@@ -1057,20 +1755,20 @@ function toggleAB(idx) {
     abMarks.splice(pos, 1);
   } else {
     abMarks.push(idx);
-    if (abMarks.length > 2) abMarks.shift();
   }
   abMarks.sort((a, b) => a - b);
-  document.querySelectorAll('.paragraph').forEach((el, i) => {
-    el.classList.toggle('ab-marked', abMarks.includes(i));
+  document.querySelectorAll('.paragraph').forEach((el) => {
+    const paraIdx = Number(el.dataset.idx);
+    el.classList.toggle('ab-marked', abMarks.includes(paraIdx));
     const btn = el.querySelector('.ab-btn');
-    if (btn) btn.classList.toggle('active', abMarks.includes(i));
+    if (btn) btn.classList.toggle('active', abMarks.includes(paraIdx));
   });
-  if (abMarks.length === 2) {
-    showToast(`A-Bリピート: 段落 ${abMarks[0] + 1}〜${abMarks[1] + 1}`);
+  if (abMarks.length > 1) {
+    showToast(`リピート: ${abMarks.length}段落を順番に再生`);
   } else if (abMarks.length === 1) {
-    showToast(`A点セット — もう1段落を選択`);
+    showToast(`リピート: 段落 ${abMarks[0] + 1}`);
   } else {
-    showToast('A-Bリピート解除');
+    showToast('リピート解除');
   }
 }
 
@@ -1138,13 +1836,20 @@ audio.addEventListener('timeupdate', () => {
       }
       activeParaIdx = idx;
     }
-    if (abMarks.length === 2) {
-      const [a, b] = abMarks;
-      const endTime = (b + 1 < currentMaterial.paragraphs.length)
-        ? currentMaterial.paragraphs[b + 1].time
-        : (audio.duration || Infinity);
-      if (audio.currentTime >= endTime - 0.05) {
-        audio.currentTime = currentMaterial.paragraphs[a].time;
+    if (abMarks.length > 0) {
+      const currentIdx = findParaAt(audio.currentTime);
+      if (abMarks.includes(currentIdx)) {
+        const endTime = getParagraphEndTime(currentIdx);
+        if (audio.currentTime >= endTime - 0.05) {
+          const pos = abMarks.indexOf(currentIdx);
+          const nextIdx = abMarks[(pos + 1) % abMarks.length];
+          audio.currentTime = currentMaterial.paragraphs[nextIdx].time;
+        }
+      } else {
+        const nextIdx = abMarks.find(mark => currentMaterial.paragraphs[mark].time > audio.currentTime) ?? abMarks[0];
+        if (audio.currentTime >= getParagraphEndTime(activeParaIdx)) {
+          audio.currentTime = currentMaterial.paragraphs[nextIdx].time;
+        }
       }
     }
   }
@@ -1161,6 +1866,13 @@ function findParaAt(t) {
   return idx;
 }
 
+function getParagraphEndTime(idx) {
+  if (!currentMaterial || idx < 0) return audio.duration || Infinity;
+  return (idx + 1 < currentMaterial.paragraphs.length)
+    ? currentMaterial.paragraphs[idx + 1].time
+    : (audio.duration || Infinity);
+}
+
 $('progress').onclick = (e) => {
   if (!audio.duration) return;
   const rect = e.currentTarget.getBoundingClientRect();
@@ -1168,8 +1880,52 @@ $('progress').onclick = (e) => {
   audio.currentTime = (x / rect.width) * audio.duration;
 };
 
-$('infoBtn').onclick = () => $('infoModal').classList.add('open');
+$('infoBtn').onclick = () => {
+  $('apiKeyInput').value = apiKey;
+  $('apiModelInput').value = apiModel || DEFAULT_OPENAI_MODEL;
+  $('infoModal').classList.add('open');
+};
 $('infoClose').onclick = () => $('infoModal').classList.remove('open');
+$('apiSaveBtn').onclick = () => {
+  apiKey = $('apiKeyInput').value.trim();
+  apiModel = $('apiModelInput').value.trim() || DEFAULT_OPENAI_MODEL;
+  if (apiKey) localStorage.setItem('shadowingOpenAIKey', apiKey);
+  else localStorage.removeItem('shadowingOpenAIKey');
+  localStorage.setItem('shadowingOpenAIModel', apiModel);
+  showToast(apiKey ? 'AI設定を保存しました' : 'APIキーが空です');
+};
+$('apiClearBtn').onclick = () => {
+  apiKey = '';
+  apiModel = DEFAULT_OPENAI_MODEL;
+  localStorage.removeItem('shadowingOpenAIKey');
+  localStorage.setItem('shadowingOpenAIModel', apiModel);
+  $('apiKeyInput').value = '';
+  $('apiModelInput').value = apiModel;
+  showToast('APIキーを削除しました');
+};
+$('choiceModal').onclick = (e) => { if (e.target === $('choiceModal')) closeChoice(); };
+$('title').onclick = () => $('main').scrollTo({ top: 0, behavior: 'smooth' });
+document.querySelector('.header').addEventListener('click', (e) => {
+  if (!e.target.closest('button')) $('main').scrollTo({ top: 0, behavior: 'smooth' });
+});
+$('filterDoneBtn').onclick = () => {
+  hiddenDone = !hiddenDone;
+  localStorage.setItem('shadowingHiddenDone', hiddenDone ? '1' : '0');
+  renderParagraphs();
+  showToast(hiddenDone ? '学習済みを隠します' : '学習済みも表示します');
+};
+$('vocabBtn').onclick = () => {
+  renderVocabList();
+  $('vocabModal').classList.add('open');
+};
+$('vocabClose').onclick = () => $('vocabModal').classList.remove('open');
+$('vocabModal').onclick = (e) => { if (e.target === $('vocabModal')) $('vocabModal').classList.remove('open'); };
+$('vocabFilterBtn').onclick = () => {
+  hiddenLearnedVocab = !hiddenLearnedVocab;
+  localStorage.setItem('shadowingHiddenLearnedVocab', hiddenLearnedVocab ? '1' : '0');
+  renderVocabList();
+};
+updateFilterDoneButton();
 
 let toastTimer = null;
 function showToast(msg) {
@@ -1184,6 +1940,7 @@ function showToast(msg) {
   try {
     await openDB();
     await loadMaterialsList();
+    await loadVocabList();
     if (materials.length > 0) loadMaterial(materials[0].id);
   } catch (e) {
     console.error(e);
@@ -1192,6 +1949,9 @@ function showToast(msg) {
 })();
 
 document.addEventListener('dblclick', e => e.preventDefault());
+document.addEventListener('contextmenu', e => {
+  if (e.target.closest('.paragraph')) e.preventDefault();
+});
 </script>
 </body>
 </html>
