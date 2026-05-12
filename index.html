@@ -657,7 +657,7 @@ input { font-family: inherit; }
       <label>タイトル</label>
       <input type="text" id="impTitle" placeholder="例: Sleep Number店訪問">
       <label>音声ファイル</label>
-      <input type="file" id="impAudio" accept="audio/*">
+      <input type="file" id="impAudio" accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac,.flac,.opus,.webm">
       <label>文字起こし (.txt)</label>
       <input type="file" id="impText" accept=".txt,text/plain">
       <div class="modal-buttons">
@@ -920,11 +920,29 @@ $('impSave').onclick = async () => {
       $('impSave').disabled = false;
       return;
     }
+    // Detect audio MIME type from file extension if browser didn't set it
+    const ext = (audioFile.name.split('.').pop() || '').toLowerCase();
+    const mimeMap = {
+      mp3: 'audio/mpeg',
+      wav: 'audio/wav',
+      ogg: 'audio/ogg',
+      oga: 'audio/ogg',
+      opus: 'audio/ogg',
+      m4a: 'audio/mp4',
+      mp4: 'audio/mp4',
+      aac: 'audio/aac',
+      flac: 'audio/flac',
+      webm: 'audio/webm'
+    };
+    const detectedType = audioFile.type || mimeMap[ext] || 'audio/mpeg';
+    // Re-create blob with correct type for cross-platform compatibility (especially iOS Safari)
+    const audioBlob = audioFile.type ? audioFile : new Blob([await audioFile.arrayBuffer()], { type: detectedType });
     const material = {
       id: 'm_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
       title,
-      audioBlob: audioFile,
-      audioType: audioFile.type || 'audio/ogg',
+      audioBlob: audioBlob,
+      audioType: detectedType,
+      audioFileName: audioFile.name,
       paragraphs,
       progress: {},
       createdAt: Date.now()
